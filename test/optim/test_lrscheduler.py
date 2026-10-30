@@ -1718,6 +1718,16 @@ class TestLRScheduler(TestCase):
         self.assertIs(scheduler._scale_fn_custom, scale_fn)
         self.assertIs(restored_scheduler._scale_fn_custom, scale_fn)
 
+    def test_cycle_lr_load_state_dict_twice(self):
+        scheduler = CyclicLR(self.opt, base_lr=1, max_lr=5)
+        state = scheduler.state_dict()
+        restored_scheduler = CyclicLR(self.opt, base_lr=1, max_lr=5)
+        restored_scheduler.load_state_dict(state)
+        # The caller's state_dict must not be mutated by load_state_dict
+        self.assertIn("_scale_fn_custom", state)
+        restored_scheduler.load_state_dict(state)
+        self.assertEqual(restored_scheduler.state_dict(), state)
+
     def test_onecycle_lr_invalid_anneal_strategy(self):
         with self.assertRaises(ValueError):
             scheduler = OneCycleLR(
